@@ -56,6 +56,7 @@ def resolve(record_table, number_of_players, chip_value, chip_count):
     for player in range(number_of_players):
         balance = (record_table[player][1] - record_table[player][2]* chip_count )* chip_value
         G.append(balance)
+
     # print("balance: ")
     # for player in range(number_of_players):
     #     print(f"{record_table[player][0]}: {G[player]}")
@@ -88,78 +89,3 @@ def main():
 
 
     resolve( record_table, number_of_players, buy_in / chip_count)
-
-# main()
-
-# for tests
-
-# table1 = [
-#     ["1", 130, 50],
-#     ["2", 80, 50],
-#     ["3", 70, 50],
-#     ["4", 60, 50],
-#     ["5", 50, 50],
-#     ["6", 40, 50],
-#     ["7", 30, 50],
-#     ["8", 20, 50],
-#     ["9", 20, 50],
-#     ["10", 0, 50],
-# ]
-
-# table2 = [
-#     ["1", 50, 25],
-#     ["2", 45, 25],
-#     ["3", 40, 25],
-#     ["4", 35, 25],
-#     ["5", 30, 25],
-#     ["6", 20, 25],
-#     ["7", 15, 25],
-#     ["8", 10, 25],
-#     ["9", 5, 25],
-#     ["10", 0, 25],
-# ]
-
-# table3 = [
-#     ["1", 170, 70],
-#     ["2", 140, 70],
-#     ["3", 100, 70],
-#     ["4", 90, 70],
-#     ["5", 80, 70],
-#     ["6", 50, 70],
-#     ["7", 40, 70],
-#     ["8", 20, 70],
-#     ["9", 10, 70],
-#     ["10", 0, 70],
-# ]
-
-# table4 = [
-#     ["1", 85, 40],
-#     ["2", 20, 40],
-#     ["3", 115, 40],
-#     ["4", 5, 40],
-#     ["5", 50, 40],
-#     ["6", 25, 40],
-#     ["7", 70, 40],
-#     ["8", 0, 40],
-#     ["9", 30, 40],
-#     ["10", 0, 40],
-# ]
-
-# table5 = [
-#     ["1", 335, 135],
-#     ["2", 235, 135],
-#     ["3", 185, 135],
-#     ["4", 160, 135],
-#     ["5", 145, 135],
-#     ["6", 110, 135],
-#     ["7", 85, 135],
-#     ["8", 60, 135],
-#     ["9", 35, 135],
-#     ["10", 0, 135],
-# ]
-
-# transfers = resolve(table1, 10, 1)
-# transfers = resolve(table2, 10, 1)
-# transfers = resolve(table3, 10, 1)
-# transfers = resolve(table4, 10, 1)
-# transfers = resolve(table5, 10, 1)
