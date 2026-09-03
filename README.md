@@ -19,7 +19,7 @@ python pokerGameGUI.py
 
 ## Usage
 
-1. Enter the number of players, the number of chips per buy-in, and the buy-in value.
+1. Enter the number of players (from 2 to 10), the number of chips per buy-in, and the buy-in value.
 2. Click `CREATE TABLE`.
 3. In the first table, enter the players' names, final chip counts, and number of buy-ins.
 4. Click `ADD GAME` to add another game. Player names are copied and cannot be changed.
@@ -28,6 +28,14 @@ python pokerGameGUI.py
 7. Click `RESOLVE` to view the total balances and suggested transfers.
 
 The `RESTART` button clears the current session and starts a new settlement.
+
+### Input and Validation
+
+- Player names must be unique. Comparison ignores letter case and leading or trailing spaces.
+- `FINAL CHIPS` and `BUY INS` accept non-negative integers.
+- The `CHIPS ON THE TABLE` indicator updates when final chip counts or buy-ins change.
+- Press `Enter` to move to the next editable field in the table.
+- Scrolling over a buy-in spinbox does not change its value.
 
 ## Balance Calculation
 
