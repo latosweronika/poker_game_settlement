@@ -1,0 +1,9 @@
+﻿saved_at,section,game,player,final_chips,buy_ins,balance,payer,receiver,amount,chip_count,buy_in,chip_value
+2026-09-08T17:30:58,SETTINGS,,,,,,,,,2,2,1.0
+2026-09-08T17:30:58,GAME,1,a,0,1,,,,,,,
+2026-09-08T17:30:58,GAME,1,b,4,1,,,,,,,
+2026-09-08T17:30:58,GAME,2,a,0,1,,,,,,,
+2026-09-08T17:30:58,GAME,2,b,4,1,,,,,,,
+2026-09-08T17:30:58,BALANCE,,a,,,-4.0,,,,,,
+2026-09-08T17:30:58,BALANCE,,b,,,4.0,,,,,,
+2026-09-08T17:30:58,TRANSFER,,,,,,a,b,4.0,,,

@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
 from poker_game_settlement import dfs, resolve
+from game_analysis import save_game_to_csv, list_saved_games, load_game_from_csv, build_player_balance_history
 
 
 #problem z defoultowymi wartosciami w spinboxach, trzeba je poprawić, wskakują 0 jak nie powinny
@@ -25,6 +26,8 @@ GREEN = "#4DBB86"
 
 def validate_players_number(value):
     if value == "":
+        return True
+    if value == "1":
         return True
     try:
         number = int(value)
@@ -270,6 +273,19 @@ class SettlementGUI:
             pady=(15, 0)
         )
 
+        self.load_saved_button = ttk.Button(
+            settings_frame,
+            text="LOAD SAVED GAMES",
+            command=self.show_saved_games_window
+        )
+
+        self.load_saved_button.grid(
+            row=5,
+            column=0,
+            columnspan=2,
+            pady=(10, 0)
+        )
+
         self.table_frame = tk.Frame(
             self.scroll_frame,
             bg=TABLE,
@@ -456,6 +472,7 @@ class SettlementGUI:
         self.resolve_button.grid(row=n + 2, column=3, padx=6, pady=(15, 0))
 
         self.create_table_button.grid_remove()
+        self.load_saved_button.grid_remove()
 
     def validate_table_names(self):
         names = [name.get() for name, _, _ in self.rows[0]]
@@ -741,6 +758,227 @@ class SettlementGUI:
         return "break"
 
 
+    def show_saved_games_window(self):
+        saved_games = list_saved_games()
+        window = tk.Toplevel(self.root)
+        window.title("Previous games")
+        window.geometry("760x500")
+        window.minsize(600, 400)
+        window.transient(self.root)
+        window.grab_set()
+
+        main = tk.Frame(window, bg=BG, padx=18, pady=18)
+        main.pack(fill="both", expand=True)
+
+        ttk.Label(main, text="PREVIOUS GAMES", style="Section.TLabel").pack(anchor="w")
+
+        selector_frame = tk.Frame(main, bg=BG)
+        selector_frame.pack(fill="both", expand=True, pady=(12, 10))
+
+        canvas = tk.Canvas(selector_frame, bg=BG, highlightthickness=0)
+        canvas.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(selector_frame, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        file_frame = tk.Frame(canvas, bg=BG)
+        file_window = canvas.create_window((0, 0), window=file_frame, anchor="nw")
+
+        def update_file_scroll(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def resize_file_frame(event=None):
+            canvas.itemconfig(file_window, width=event.width)
+
+        file_frame.bind("<Configure>", update_file_scroll)
+        canvas.bind("<Configure>", resize_file_frame)
+
+        if not saved_games:
+            ttk.Label(file_frame, text="No saved games found in previous_games.", background=BG, foreground=TEXT).pack(anchor="w", padx=8, pady=8)
+            buttons = tk.Frame(main, bg=BG)
+            buttons.pack(fill="x", pady=(10, 0))
+            ttk.Button(buttons, text="Close", command=window.destroy).pack(anchor="e")
+            return
+
+        check_vars = []
+
+        for index, item in enumerate(saved_games):
+            row = tk.Frame(file_frame, bg=BG)
+            row.pack(fill="x", pady=3, padx=4)
+            var = tk.BooleanVar(value=False)
+            check_vars.append(var)
+
+            ttk.Checkbutton(row, variable=var).pack(side="left")
+
+            date_label = tk.Label(
+                row,
+                text=item['display_date'] or item['saved_at'] or 'unknown date',
+                bg=BG,
+                fg="#1E88E5",
+                anchor="w",
+                font=("Segoe UI", 9, "bold"),
+            )
+            date_label.pack(side="left", padx=(8, 8))
+
+            file_label = tk.Label(row, text=item['filename'], bg=BG, fg=TEXT, anchor="w")
+            file_label.pack(side="left", fill="x", expand=True)
+
+        buttons = tk.Frame(main, bg=BG)
+        buttons.pack(fill="x", pady=(10, 0))
+
+        ttk.Button(buttons, text="LOAD", command=lambda: self.load_selected_saved_games(window, check_vars, saved_games)).pack(side="right")
+        ttk.Button(buttons, text="Close", command=window.destroy).pack(side="right", padx=(0, 10))
+
+    def load_selected_saved_games(self, window, check_vars, saved_games):
+        selected_paths = [saved_games[index]["path"] for index, var in enumerate(check_vars) if var.get()]
+        if not selected_paths:
+            messagebox.showwarning("No selection", "Select at least one saved game to load.")
+            return
+
+        history = build_player_balance_history(selected_paths)
+        window.destroy()
+        self.show_history_analysis_screen(history)
+
+    def show_history_analysis_screen(self, history):
+        for widget in self.main_container.winfo_children():
+            widget.destroy()
+
+        header = tk.Frame(self.main_container, bg=BG, height=120)
+        header.pack(fill="x", side="top")
+
+        ttk.Label(header, text="♠  GAME HISTORY  ♥", style="Title.TLabel").pack(pady=(22, 3))
+        ttk.Label(header, text="BALANCE OVER TIME", style="Subtitle.TLabel").pack(pady=(0, 12))
+
+        bottom_bar = tk.Frame(self.main_container, bg=BG, height=70)
+        bottom_bar.pack(fill="x", side="bottom", pady=(0, 8))
+        bottom_bar.pack_propagate(False)
+
+        button_frame = tk.Frame(bottom_bar, bg=BG)
+        button_frame.pack(anchor="center", pady=14)
+        ttk.Button(button_frame, text="←  BACK", command=self.show_edit_screen).pack(side="left")
+
+        center = tk.Frame(self.main_container, bg=BG)
+        center.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+
+        canvas = tk.Canvas(center, bg=BG, highlightthickness=0)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar = ttk.Scrollbar(center, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        chart_frame = tk.Frame(canvas, bg=PANEL, padx=20, pady=20)
+        canvas_window = canvas.create_window((0, 0), window=chart_frame, anchor="nw")
+
+        def resize_chart(event):
+            canvas.itemconfig(canvas_window, width=event.width)
+
+        def update_chart_scroll(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        chart_frame.bind("<Configure>", update_chart_scroll)
+        canvas.bind("<Configure>", resize_chart)
+
+        if not history.get("players"):
+            ttk.Label(chart_frame, text="No balance history available.", style="Section.TLabel").pack(anchor="w")
+            return
+
+        series = history["series"]
+        players = history["players"]
+        labels = sorted({point for values in series.values() for point in [step[0] for step in values]})
+
+        x_count = max(len(labels), 1)
+
+        # y_values = [point[1] for values in series.values() for point in values]
+        y_values = []
+        for player in players:
+            balance = 0
+            for label, value in series[player]:
+                balance += value
+                y_values.append(balance)
+
+        if not y_values:
+            y_min = 0
+            y_max = 1
+        else:
+            y_min = min(y_values)
+            y_max = max(y_values)
+            if y_min == y_max:
+                y_min -= 1
+                y_max += 1
+
+        y_min = min(y_min, 0)
+        y_max = max(y_max, 0)
+
+        # pad = max(1.0, abs(y_max - y_min) * 0.1)
+        pad = 1.0
+        y_min -= pad
+        y_max += pad
+
+        chart = tk.Canvas(chart_frame, width=800, height=420, bg="#F9FBFA", highlightthickness=1, highlightbackground="#D5DFDB")
+        chart.pack(fill="x", expand=True)
+
+        margin_left = 50
+        margin_right = 20
+        margin_top = 20
+        margin_bottom = 40
+        chart_width = 800 - margin_left - margin_right
+        chart_height = 420 - margin_top - margin_bottom
+
+        chart.create_line(margin_left, margin_top, margin_left, margin_top + chart_height, fill="#7D8C87")
+        chart.create_line(margin_left, margin_top + chart_height, margin_left + chart_width, margin_top + chart_height, fill="#7D8C87")
+
+        y_axis_steps = 8
+        for i in range(y_axis_steps):
+            y = margin_top + (chart_height * i / (y_axis_steps - 1))
+            chart.create_line(margin_left, y, margin_left + chart_width, y, fill="#E5ECE8", dash=(3, 3))
+            value = y_max - ((y_max - y_min) * i / (y_axis_steps - 1))
+            chart.create_text(margin_left - 12, y, anchor="e", text=f"{value:.0f}", fill=TEXT, font=("Segoe UI", 8))
+
+        zero_y = margin_top + chart_height - ((0 - y_min) / (y_max - y_min)) * chart_height
+        chart.create_line(margin_left, zero_y, margin_left + chart_width, zero_y, fill="#E5ECE8", dash=(3, 3))
+        chart.create_text(margin_left - 12, zero_y, anchor="e", text="0", fill=TEXT, font=("Segoe UI", 8))
+
+        if labels:
+            x_axis_padding = 40
+            x_plot_start = margin_left + x_axis_padding
+            x_plot_width = chart_width - (2 * x_axis_padding)
+            step_x = x_plot_width / max(len(labels) - 1, 1)
+            for idx, label in enumerate(labels):
+                x = x_plot_start + idx * step_x if len(labels) > 1 else margin_left + chart_width / 2
+                chart.create_text(x, margin_top + chart_height + 16, text=label, fill=TEXT, font=("Segoe UI", 7), angle=25)
+
+        colors = [ "#2B7A78", "#D45C55", "#4DBB86", "#6C63FF", "#E67E22", "#2C3E50", "#8E44AD","#B97828", "#9E1699", "#448DAD"]
+        for index, player in enumerate(players):
+            path_points = series[player]
+            if not path_points:
+                continue
+            color = colors[index % len(colors)]
+            last_x = None
+            last_y = None
+            balance = 0
+            for point_index, (label, value) in enumerate(path_points):
+                balance += value
+                if labels:
+                    label_index = labels.index(label) if label in labels else 0
+                    x_pos = x_plot_start + label_index * step_x if len(labels) > 1 else margin_left + chart_width / 2
+                else:
+                    x_pos = margin_left
+                y_pos = margin_top + chart_height - ((balance - y_min) / (y_max - y_min + 1e-9)) * chart_height
+                chart.create_oval(x_pos - 3, y_pos - 3, x_pos + 3, y_pos + 3, fill=color, outline=color)
+                if last_x is not None:
+                    chart.create_line(last_x, last_y, x_pos, y_pos, fill=color, width=2, dash=(5, 3))
+                last_x, last_y = x_pos, y_pos
+            chart.create_text(margin_left + 20, margin_top + 12 + index * 18, anchor="w", text=player, fill=color, font=("Segoe UI", 9, "bold"))
+
+        summary = tk.Text(chart_frame, bg=PANEL, fg=TEXT, height=10, width=100, relief="flat")
+        summary.pack(fill="both", expand=True, pady=(16, 0))
+        summary.insert(tk.END, "FINAL PLAYER BALANCES\n")
+        for player in players:
+            balance = sum(value for _, value in series[player])
+            summary.insert(tk.END, f"{player}: {balance}\n")
+        summary.configure(state="disabled")
+
     def run_resolve(self):
         try:
             n = len(self.rows[0])
@@ -836,6 +1074,27 @@ class SettlementGUI:
                 chip_count
             )
 
+            games_for_csv = [
+                [
+                    (
+                        name.get().strip(),
+                        0 if buyins.get().strip() == "0" else int(final.get()),
+                        int(buyins.get()),
+                    )
+                    for name, final, buyins in game_rows
+                ]
+                for game_rows in self.rows
+            ]
+            self.pending_save_data = (
+                games_for_csv,
+                total_record_table,
+                balances,
+                transfers,
+                chip_count,
+                buy_in,
+                chip_value,
+            )
+
             self.show_result_screen(
                 total_record_table,
                 balances,
@@ -844,6 +1103,23 @@ class SettlementGUI:
 
         except ValueError:
             messagebox.showerror("Invalid data","Please enter valid numbers.")
+
+    def save_current_game(self):
+        if not hasattr(self, "pending_save_data"):
+            messagebox.showerror("Save error", "There is no game ready to save.")
+            return
+
+        if not messagebox.askyesno("Save game", "Do you want to save this game?"):
+            return
+
+        try:
+            output_path = save_game_to_csv(*self.pending_save_data)
+        except OSError as error:
+            messagebox.showerror("Save error", f"Could not save the game: {error}")
+            return
+
+        messagebox.showinfo("Game saved", f"Game saved to {output_path.name}.")
+
 
     def show_result_screen(self, record_table, balances, transfers):
         for widget in self.main_container.winfo_children():
@@ -859,7 +1135,19 @@ class SettlementGUI:
         bottom_bar.pack( fill="x", side="bottom", pady=(0, 8))
         bottom_bar.pack_propagate(False)
 
-        ttk.Button(  bottom_bar,  text="←  NEW GAME",  command=self.show_edit_screen).pack(pady=14)
+        button_frame = tk.Frame(bottom_bar, bg=BG)
+        button_frame.pack(anchor="center", pady=14)
+
+        ttk.Button(
+            button_frame,
+            text="SAVE",
+            command=self.save_current_game
+        ).pack(side="left", padx=(0, 8))
+        ttk.Button(
+            button_frame,
+            text="←  NEW GAME",
+            command=self.show_edit_screen
+        ).pack(side="left")
 
         center = tk.Frame(self.main_container, bg=BG)
         center.pack(fill="both", expand=True)
@@ -896,7 +1184,7 @@ class SettlementGUI:
             bd=0,
             padx=20,
             pady=20,
-            height=15
+            height=1
         )
 
         output.pack(
@@ -988,7 +1276,8 @@ class SettlementGUI:
                     f"{payer:<15} → {receiver:<15} {amount:.2f}\n"
                 )
 
-        output.configure( state="disabled")
+        line_count = int(output.index("end-1c").split(".")[0])
+        output.configure(height=max(1, line_count), state="disabled")
 
 # start
 root = tk.Tk()

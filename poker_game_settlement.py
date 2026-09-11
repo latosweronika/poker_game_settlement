@@ -4,12 +4,13 @@
 # different possible combinations of transfers
 
 def dfs(balances, transfers):
+    tolerance = 1e-9
 
     # if all balances are zero
-    if all(x == 0 for x in balances):
+    if all(abs(x) < tolerance for x in balances):
         return transfers.copy()
     # player who still has non-zero balance
-    i = next(i for i, x in enumerate(balances) if x != 0)
+    i = next(i for i, x in enumerate(balances) if abs(x) >= tolerance)
 
     best = None
 
