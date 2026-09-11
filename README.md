@@ -4,7 +4,7 @@ A desktop application for settling poker game results. The program calculates ea
 
 ## Requirements
 
-- Python 3.10 or newer
+- Python
 - Tkinter, which is usually included with Python
 
 The project does not require any additional external libraries.
