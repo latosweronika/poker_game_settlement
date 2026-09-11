@@ -26,12 +26,18 @@ python pokerGameGUI.py
 5. Enter the results and number of buy-ins for each additional game.
 6. If a player did not participate in a particular game, set `BUY INS` to `0`. The `FINAL CHIPS` field will be disabled and `0` will be used in the balance calculation.
 7. Click `RESOLVE` to view the total balances and suggested transfers.
+8. Confirm the save prompt or click `SAVE` next to `NEW GAME` to save the session as a CSV file.
+9. Click `LOAD SAVED GAMES` to select saved sessions and view the balance history chart.
 
 The `RESTART` button clears the current session and starts a new settlement.
+Saved CSV files are stored in the `previous_games` directory and include the save date and time, table states, balances, and transfers.
+
+The history chart shows each player's cumulative balance over the selected games. It uses eight labeled levels on the Y axis and always displays a dashed zero-balance line.
 
 ### Input and Validation
 
 - Player names must be unique. Comparison ignores letter case and leading or trailing spaces.
+- The number of players must be between 2 and 10. The value `10` can be entered manually or selected with the spinbox.
 - `FINAL CHIPS` and `BUY INS` accept non-negative integers.
 - The `CHIPS ON THE TABLE` indicator updates when final chip counts or buy-ins change.
 - Press `Enter` to move to the next editable field in the table.
@@ -51,3 +57,5 @@ The DFS backtracking algorithm then finds a solution with the minimum number of 
 
 - `pokerGameGUI.py` - graphical user interface.
 - `poker_game_settlement.py` - balance and transfer calculations.
+- `game_analysis.py` - saved-game loading, CSV handling, and balance history data.
+- `previous_games/` - saved session CSV files.
